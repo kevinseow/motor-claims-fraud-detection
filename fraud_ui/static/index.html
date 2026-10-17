@@ -335,6 +335,7 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
+    .status-dot.queued   { background: var(--accent2); animation: pulse 1.2s infinite; }
     .status-dot.running  { background: var(--warning); animation: pulse 1.5s infinite; }
     .status-dot.succeeded { background: var(--success); }
     .status-dot.failed   { background: var(--danger); }
@@ -797,9 +798,14 @@
         return;
       }
 
-      currentRun = { run_id: data.run_id, execution_name: data.execution_name, case_id: data.case_id };
-      toast(`Job started for ${data.case_id}`, 'success');
-      setStatus('running', 'Job running…', `Case ${data.case_id} · Execution triggered`);
+      currentRun = { run_id: data.run_id, execution_name: data.execution_name || '', case_id: data.case_id };
+      if (data.state === 'queued') {
+        toast(`Claim pack enqueued in Cloud Tasks for ${data.case_id}`, 'success');
+        setStatus('queued', 'In Queue…', 'Rate-limiting queue active (Cloud Tasks)');
+      } else {
+        toast(`Job started for ${data.case_id}`, 'success');
+        setStatus('running', 'Job running…', `Case ${data.case_id} · Execution active`);
+      }
 
       const startTime = Date.now();
       pollStatus(startTime);
@@ -822,10 +828,11 @@
         let data;
         try {
           const resp = await fetch(
-            `/api/status?execution_name=${encodeURIComponent(currentRun.execution_name)}`,
+            `/api/status?run_id=${encodeURIComponent(currentRun.run_id)}&execution_name=${encodeURIComponent(currentRun.execution_name || '')}`,
             { headers: { 'X-API-Key': apiKey() } }
           );
           data = await resp.json();
+          if (data.execution_name) currentRun.execution_name = data.execution_name;
         } catch (_) {
           pollStatus(startTime);   // retry on transient error
           return;
@@ -840,17 +847,20 @@
           setStatus('failed', 'Job ' + data.state, 'Check Cloud Run logs for details.');
           $('progress-bar').style.width = '0';
           resetSubmit();
+        } else if (data.state === 'queued') {
+          setStatus('queued', 'In Queue…', data.message || 'Waiting for rate-limited dispatch');
+          pollStatus(startTime);
         } else {
-          if (elapsed < 25) {
+          if (elapsed < 30) {
             setStatus('running', 'Initializing Pipeline…', `Preparing claim pack files for ${currentRun.case_id}`);
-          } else if (elapsed < 75) {
+          } else if (elapsed < 80) {
             setStatus('running', 'Stage 1: Photo Reading…', 'Multimodal AI reading vehicle damage photographs');
           } else {
             setStatus('running', 'Stage 2: Fraud Detectors…', 'Evaluating 8 fraud detectors, pricing & prior claims');
           }
           pollStatus(startTime);
         }
-      }, 8000);   // poll every 8 s
+      }, 7000);   // poll every 7 s
     }
 
     function fmtElapsed(s) {

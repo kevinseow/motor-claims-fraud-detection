@@ -96,6 +96,27 @@ Claim Pack
 
 ---
 
+## ⚡ Cloud Tasks Decoupled Queue & Rate Limiting
+
+To scale smoothly under high concurrency without dropping requests or triggering 429 quota exhaustion:
+
+```
+[Claim Upload] ──► [GCS Ingestion] ──► [Cloud Tasks Queue] ──► [Worker Endpoint] ──► [Cloud Run Job]
+ (User Request)      (Inputs Stored)    (Rate-Limited Buffer)   (Dispatched 10/s)      (Multimodal Run)
+```
+
+* **Queue Name:** `projects/fraud-detection-511308/locations/asia-southeast1/queues/fraud-claims-queue`
+* **Rate Limits:**
+  * `max_dispatches_per_second`: `10`
+  * `max_concurrent_dispatches`: `20`
+* **Retry Policy with Exponential Backoff:**
+  * `max_attempts`: `5`
+  * `min_backoff`: `5s`
+  * `max_backoff`: `60s`
+  * `max_doublings`: `3`
+
+---
+
 ## 🛡️ Detectors Evaluated (D1–D8)
 
 | Code | Detector | What It Evaluates |

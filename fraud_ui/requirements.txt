@@ -1,4 +1,5 @@
 flask>=3.0
 google-cloud-storage>=2.0
 google-cloud-run>=0.10
+google-cloud-tasks>=2.16
 gunicorn>=21.0
