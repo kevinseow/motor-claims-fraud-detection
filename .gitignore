@@ -1,0 +1,24 @@
+# Secrets & environment
+.env
+.env.*
+!.env.example
+
+# Python & virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Run logs & generated reports
+*.log
+fraud_results_raw/
+FRAUD_DETECTION_RESULTS.md
+
+# OS & Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.agents/

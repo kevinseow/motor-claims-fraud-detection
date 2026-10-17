@@ -1,0 +1,202 @@
+{
+  "CASE-155": {
+    "original_case_id": "CLN-002",
+    "verdict": "clean",
+    "technique": null,
+    "technique_name": null,
+    "difficulty": "hard",
+    "title": "Kerbside scrape, minor cosmetic only",
+    "damaged_parts": [
+      "Left Side Mirror"
+    ],
+    "declared_severity": "Minor cosmetic",
+    "declared_estimate": 260.0,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-229": {
+    "original_case_id": "FRD-008",
+    "verdict": "fraud",
+    "technique": "D8",
+    "technique_name": "Loss-type mismatch (staged theft)",
+    "difficulty": "medium",
+    "title": "Declared as theft, but the evidence shows impact damage",
+    "damaged_parts": [
+      "Front Bumper",
+      "Front Left Headlamp"
+    ],
+    "declared_severity": "Moderate",
+    "declared_estimate": 7927.24,
+    "nature_of_loss": "Theft"
+  },
+  "CASE-278": {
+    "original_case_id": "CLN-001",
+    "verdict": "clean",
+    "technique": null,
+    "technique_name": null,
+    "difficulty": "easy",
+    "title": "Rear-end collision at a signalised junction",
+    "damaged_parts": [
+      "Rear Bumper",
+      "Boot Lid"
+    ],
+    "declared_severity": "Moderate",
+    "declared_estimate": 6317.64,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-295": {
+    "original_case_id": "FRD-003",
+    "verdict": "fraud",
+    "technique": "D3",
+    "technique_name": "Pre-existing / staged damage",
+    "difficulty": "hard",
+    "title": "Narrative describes a concrete-pillar impact; evidence is two surface scratches",
+    "damaged_parts": [
+      "Rear Left Wing",
+      "Rear Bumper"
+    ],
+    "declared_severity": "Moderate",
+    "declared_estimate": 2144.14,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-381": {
+    "original_case_id": "FRD-001",
+    "verdict": "fraud",
+    "technique": "D1",
+    "technique_name": "Ghost / invented damage",
+    "difficulty": "medium",
+    "title": "Three of four claimed panels have no supporting photograph",
+    "damaged_parts": [
+      "Windscreen",
+      "Front Bumper",
+      "Rear Bumper",
+      "Front Left Headlamp"
+    ],
+    "declared_severity": "Moderate",
+    "declared_estimate": 10707.12,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-410": {
+    "original_case_id": "CLN-004",
+    "verdict": "clean",
+    "technique": null,
+    "technique_name": null,
+    "difficulty": "medium",
+    "title": "Hail and wind damage to lamp and rear window",
+    "damaged_parts": [
+      "Front Left Headlamp",
+      "Rear Window"
+    ],
+    "declared_severity": "Severe",
+    "declared_estimate": 6482.45,
+    "nature_of_loss": "Wind & Hail"
+  },
+  "CASE-502": {
+    "original_case_id": "CLN-005",
+    "verdict": "clean",
+    "technique": null,
+    "technique_name": null,
+    "difficulty": "medium",
+    "title": "Tyre burst causing rollover - five panels, all photographed",
+    "damaged_parts": [
+      "Roof Panel",
+      "Front Left Wing",
+      "Rear Left Wing",
+      "Left Side Mirror",
+      "Front Left Tyre"
+    ],
+    "declared_severity": "Severe",
+    "declared_estimate": 19096.8,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-635": {
+    "original_case_id": "FRD-002",
+    "verdict": "fraud",
+    "technique": "D2",
+    "technique_name": "Severity inflation",
+    "difficulty": "easy",
+    "title": "Two light scratches claimed as a write-off",
+    "damaged_parts": [
+      "Rear Left Door",
+      "Boot Lid"
+    ],
+    "declared_severity": "Vehicle not drivable",
+    "declared_estimate": 14800.0,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-787": {
+    "original_case_id": "FRD-007",
+    "verdict": "fraud",
+    "technique": "D7",
+    "technique_name": "Wear-and-tear claimed as collision",
+    "difficulty": "hard",
+    "title": "Five hairline scuffs presented as a road traffic accident",
+    "damaged_parts": [
+      "Front Bumper",
+      "Rear Bumper",
+      "Front Left Wing",
+      "Front Right Wing"
+    ],
+    "declared_severity": "Minor cosmetic",
+    "declared_estimate": 4147.22,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-822": {
+    "original_case_id": "FRD-006",
+    "verdict": "fraud",
+    "technique": "D6",
+    "technique_name": "Duplicate / repeat claim",
+    "difficulty": "medium",
+    "title": "Same panels, same vehicle, resubmitted after an earlier settlement",
+    "damaged_parts": [
+      "Front Bumper",
+      "Front Left Wing",
+      "Front Left Headlamp"
+    ],
+    "declared_severity": "Moderate",
+    "declared_estimate": 8360.08,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-861": {
+    "original_case_id": "FRD-005",
+    "verdict": "fraud",
+    "technique": "D5",
+    "technique_name": "Exclusion / policy not in force",
+    "difficulty": "easy",
+    "title": "Genuine collision on a policy that expired 11 days earlier",
+    "damaged_parts": [
+      "Front Bumper",
+      "Front Left Wing"
+    ],
+    "declared_severity": "Moderate",
+    "declared_estimate": 8832.27,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-872": {
+    "original_case_id": "CLN-003",
+    "verdict": "clean",
+    "technique": null,
+    "technique_name": null,
+    "difficulty": "hard",
+    "title": "Car-park sideswipe with minor dent - wording resembles a wear claim",
+    "damaged_parts": [
+      "Front Right Wing"
+    ],
+    "declared_severity": "Minor cosmetic",
+    "declared_estimate": 1139.45,
+    "nature_of_loss": "Collision"
+  },
+  "CASE-947": {
+    "original_case_id": "FRD-004",
+    "verdict": "fraud",
+    "technique": "D4",
+    "technique_name": "Invoice / parts inflation",
+    "difficulty": "medium",
+    "title": "Genuine moderate dent with a quotation 8x the market rate",
+    "damaged_parts": [
+      "Front Left Wing"
+    ],
+    "declared_severity": "Moderate",
+    "declared_estimate": 3955.07,
+    "nature_of_loss": "Collision"
+  }
+}

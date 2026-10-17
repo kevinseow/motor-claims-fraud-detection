@@ -1,0 +1,10 @@
+.git
+.agents
+.venv
+__pycache__
+*.pyc
+*.log
+.env
+.env.*
+fraud_ui
+FRAUD_DETECTION_RESULTS.md

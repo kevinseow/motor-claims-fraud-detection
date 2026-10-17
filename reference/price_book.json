@@ -1,0 +1,338 @@
+{
+  "meta": {
+    "market": "Singapore",
+    "currency": "SGD",
+    "basis": "Independent panel workshop rates, 2026. Excludes GST unless stated. Figures are synthetic reference values for a hackathon dataset, not a published tariff.",
+    "severity_multiplier": {
+      "Minor cosmetic": 1.0,
+      "Moderate": 1.35,
+      "Severe": 1.9,
+      "Vehicle not drivable": 2.4
+    },
+    "severity_by_observed_damage_pct": {
+      "minor": "0.0-6.0",
+      "light": "4.0-12.0",
+      "moderate": "10.0-22.0",
+      "heavy": "18.0-40.0",
+      "severe": "30.0-100.0"
+    }
+  },
+  "parts": {
+    "Front Bumper": {
+      "category": "Panel - plastic",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1450,
+        "Panel repair": 380,
+        "Refinish": 520
+      }
+    },
+    "Rear Bumper": {
+      "category": "Panel - plastic",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1380,
+        "Panel repair": 360,
+        "Refinish": 500
+      }
+    },
+    "Front Bonnet": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1120,
+        "Panel repair": 340,
+        "Refinish": 480
+      }
+    },
+    "Boot Lid": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1050,
+        "Panel repair": 330,
+        "Refinish": 460
+      }
+    },
+    "Front Left Wing": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 980,
+        "Panel repair": 320,
+        "Refinish": 450
+      }
+    },
+    "Front Right Wing": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 980,
+        "Panel repair": 320,
+        "Refinish": 450
+      }
+    },
+    "Rear Left Wing": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 940,
+        "Panel repair": 315,
+        "Refinish": 440
+      }
+    },
+    "Rear Right Wing": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 940,
+        "Panel repair": 315,
+        "Refinish": 440
+      }
+    },
+    "Front Left Door": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1240,
+        "Panel repair": 350,
+        "Refinish": 470
+      }
+    },
+    "Front Right Door": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1240,
+        "Panel repair": 350,
+        "Refinish": 470
+      }
+    },
+    "Rear Left Door": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1180,
+        "Panel repair": 345,
+        "Refinish": 465
+      }
+    },
+    "Rear Right Door": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1180,
+        "Panel repair": 345,
+        "Refinish": 465
+      }
+    },
+    "Roof Panel": {
+      "category": "Panel - steel",
+      "expected_damage_classes": [
+        "dent",
+        "scratch"
+      ],
+      "rates": {
+        "Panel replacement": 1320,
+        "Panel repair": 355,
+        "Refinish": 490
+      }
+    },
+    "Left Side Mirror": {
+      "category": "Assembly",
+      "expected_damage_classes": [
+        "lamp broken",
+        "crack"
+      ],
+      "rates": {
+        "Assembly replacement": 640,
+        "Glass/mirror repair": 180
+      }
+    },
+    "Right Side Mirror": {
+      "category": "Assembly",
+      "expected_damage_classes": [
+        "lamp broken",
+        "crack"
+      ],
+      "rates": {
+        "Assembly replacement": 640,
+        "Glass/mirror repair": 180
+      }
+    },
+    "Front Left Headlamp": {
+      "category": "Lighting",
+      "expected_damage_classes": [
+        "lamp broken"
+      ],
+      "rates": {
+        "Assembly replacement": 1180,
+        "Glass/housing repair": 420
+      }
+    },
+    "Front Right Headlamp": {
+      "category": "Lighting",
+      "expected_damage_classes": [
+        "lamp broken"
+      ],
+      "rates": {
+        "Assembly replacement": 1180,
+        "Glass/housing repair": 420
+      }
+    },
+    "Rear Left Tail Lamp": {
+      "category": "Lighting",
+      "expected_damage_classes": [
+        "lamp broken"
+      ],
+      "rates": {
+        "Assembly replacement": 460,
+        "Lens repair": 180
+      }
+    },
+    "Rear Right Tail Lamp": {
+      "category": "Lighting",
+      "expected_damage_classes": [
+        "lamp broken"
+      ],
+      "rates": {
+        "Assembly replacement": 460,
+        "Lens repair": 180
+      }
+    },
+    "Windscreen": {
+      "category": "Glazing",
+      "expected_damage_classes": [
+        "crack",
+        "glass shatter"
+      ],
+      "rates": {
+        "Glass replacement": 980,
+        "Chip/star repair": 220
+      }
+    },
+    "Rear Window": {
+      "category": "Glazing",
+      "expected_damage_classes": [
+        "crack",
+        "glass shatter"
+      ],
+      "rates": {
+        "Glass replacement": 860,
+        "Chip/star repair": 200
+      }
+    },
+    "Side Window (front left)": {
+      "category": "Glazing",
+      "expected_damage_classes": [
+        "crack",
+        "glass shatter"
+      ],
+      "rates": {
+        "Glass replacement": 720,
+        "Chip/star repair": 190
+      }
+    },
+    "Side Window (front right)": {
+      "category": "Glazing",
+      "expected_damage_classes": [
+        "crack",
+        "glass shatter"
+      ],
+      "rates": {
+        "Glass replacement": 720,
+        "Chip/star repair": 190
+      }
+    },
+    "Front Left Tyre": {
+      "category": "Tyre",
+      "expected_damage_classes": [
+        "tire flat"
+      ],
+      "rates": {
+        "Tyre replacement": 480,
+        "Puncture repair": 90
+      }
+    },
+    "Front Right Tyre": {
+      "category": "Tyre",
+      "expected_damage_classes": [
+        "tire flat"
+      ],
+      "rates": {
+        "Tyre replacement": 480,
+        "Puncture repair": 90
+      }
+    },
+    "Rear Left Tyre": {
+      "category": "Tyre",
+      "expected_damage_classes": [
+        "tire flat"
+      ],
+      "rates": {
+        "Tyre replacement": 440,
+        "Puncture repair": 90
+      }
+    },
+    "Rear Right Tyre": {
+      "category": "Tyre",
+      "expected_damage_classes": [
+        "tire flat"
+      ],
+      "rates": {
+        "Tyre replacement": 440,
+        "Puncture repair": 90
+      }
+    }
+  },
+  "category_upcharge_watchlist": {
+    "CALIBRATION": "Radar/LDW camera calibration. Never required for cosmetic scratch or dent work.",
+    "SENSOR": "Parking sensor or blind-spot module replacement.",
+    "PREMIUM_FINISH": "Multi-stage premium refinish or pearl/flake paint blending.",
+    "PAINT_BLENDING": "Colour blending of a replacement panel into adjacent panels.",
+    "PANEL_REPLACE": "Full panel replacement where a repair line is available at materially lower cost.",
+    "ACCESSORY": "Non-original or branded accessory fitment not present at registration."
+  },
+  "expected_total": {
+    "method": "sum over claimed parts of the line item appropriate to the observed severity, times the severity multiplier, plus a flat consumables/labour overhead",
+    "consumables_overhead": 180,
+    "tolerance_ratio_for_clean_case": 2.2,
+    "fraud_escalation_ratio_for_invoice_detector": 4.0
+  }
+}

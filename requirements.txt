@@ -1,0 +1,4 @@
+# Runtime dependencies for run_fraud_detection.py
+pypdf>=4.0
+pypdfium2>=4.0
+google-cloud-storage>=2.0

@@ -1,0 +1,26 @@
+{
+  "prior_claims": [
+    {
+      "claim_reference": "CLM-2026-041177",
+      "policy_number": "MIR-3362-8890-04",
+      "vehicle_registration": "JFD7741R",
+      "vehicle_chassis": "KNAP4A19A8T602255",
+      "loss_date": "2026-07-12",
+      "reported_date": "2026-07-13",
+      "nature_of_loss": "Collision",
+      "damage_severity": "Moderate",
+      "damaged_parts": [
+        "Front Bumper",
+        "Front Left Wing",
+        "Front Left Headlamp"
+      ],
+      "accident_description": "Another vehicle reversed into the front of my parked car while I was at the void deck. Front bumper, left wing and left headlamp damaged. Police report taken at Hougang.",
+      "police_report_ref": "CASE 26/0712/0338",
+      "estimated_loss": 4210.0,
+      "settled_amount": 3980.0,
+      "status": "Closed - repaired",
+      "repairer_name": "AutoCare Works Pte Ltd",
+      "closed_date": "2026-07-29"
+    }
+  ]
+}

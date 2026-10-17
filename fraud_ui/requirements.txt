@@ -1,0 +1,4 @@
+flask>=3.0
+google-cloud-storage>=2.0
+google-cloud-run>=0.10
+gunicorn>=21.0

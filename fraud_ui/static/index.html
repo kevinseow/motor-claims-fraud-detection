@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motor Claims Fraud Detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b0f1a;
+      --surface:   #111827;
+      --surface2:  #1a2236;
+      --border:    #1f2d45;
+      --accent:    #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --accent2:   #06b6d4;
+      --success:   #10b981;
+      --warning:   #f59e0b;
+      --danger:    #ef4444;
+      --text:      #f1f5f9;
+      --muted:     #64748b;
+      --muted2:    #94a3b8;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Background grid ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Glow orbs ─── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 { width: 600px; height: 600px; background: rgba(59,130,246,0.12); top: -200px; right: -100px; }
+    .orb-2 { width: 500px; height: 500px; background: rgba(6,182,212,0.08); bottom: -100px; left: -100px; }
+
+    /* ─── Layout ─── */
+    .shell {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ─── Header ─── */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .badge::before { content: '●'; font-size: 8px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    header h1 {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #f1f5f9 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+    header p {
+      color: var(--muted2);
+      font-size: 15px;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: rgba(59,130,246,0.3); }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── Form inputs ─── */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted2);
+      margin-bottom: 6px;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 16px;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    input::placeholder { color: var(--muted); }
+
+    /* ─── Drop zone ─── */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(59,130,246,0.05);
+    }
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .dropzone-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .dropzone-label {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .dropzone-hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ─── File list ─── */
+    #file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 14px;
+      margin-bottom: 16px;
+    }
+    .pack-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+    .pack-badge.ready {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+    .pack-badge.partial {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+    .file-group-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .file-chips-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .file-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      animation: slideIn 0.15s ease;
+    }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .file-chip .file-icon { font-size: 16px; }
+    .file-chip .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-chip .file-size { color: var(--muted); font-size: 11px; }
+    .file-chip .remove-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .file-chip .remove-btn:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--accent2);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      font-family: inherit;
+      padding: 0;
+    }
+    .link-btn:hover { color: var(--text); }
+
+    /* ─── Button ─── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px 24px;
+      background: var(--accent);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+    }
+    .btn:hover:not(:disabled) {
+      background: #2563eb;
+      box-shadow: 0 6px 28px rgba(59,130,246,0.5);
+      transform: translateY(-1px);
+    }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Status panel ─── */
+    #status-panel { display: none; }
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.running  { background: var(--warning); animation: pulse 1.5s infinite; }
+    .status-dot.succeeded { background: var(--success); }
+    .status-dot.failed   { background: var(--danger); }
+    .status-meta { flex: 1; }
+    .status-meta .status-label { font-size: 14px; font-weight: 600; }
+    .status-meta .status-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ─── Progress bar ─── */
+    .progress-wrap {
+      background: var(--border);
+      border-radius: 99px;
+      height: 4px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      background-size: 200% 100%;
+      transition: width 0.4s ease;
+    }
+    .progress-bar.indeterminate {
+      width: 40% !important;
+      animation: indeterminate 1.4s ease-in-out infinite;
+    }
+    @keyframes indeterminate {
+      0%   { transform: translateX(-150%); }
+      100% { transform: translateX(350%); }
+    }
+
+    /* ─── Results ─── */
+    #results-panel { display: none; }
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .results-header h2 { font-size: 18px; font-weight: 600; }
+    .btn-secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted2);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ─── Markdown renderer ─── */
+    #report-output {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      font-size: 14px;
+      line-height: 1.7;
+      max-height: 680px;
+      overflow-y: auto;
+    }
+    #report-output::-webkit-scrollbar { width: 6px; }
+    #report-output::-webkit-scrollbar-track { background: transparent; }
+    #report-output::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Markdown styles */
+    #report-output h1 { font-size: 20px; margin: 0 0 16px; font-weight: 700; color: var(--text); }
+    #report-output h2 { font-size: 16px; margin: 24px 0 10px; font-weight: 600; color: var(--text);
+                        padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    #report-output h3 { font-size: 14px; margin: 18px 0 8px; font-weight: 600; color: var(--accent2); }
+    #report-output p  { margin-bottom: 12px; color: var(--muted2); }
+    #report-output strong { color: var(--text); }
+    #report-output code {
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      color: var(--accent2);
+    }
+    #report-output pre {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+    #report-output pre code { background: none; border: none; padding: 0; color: var(--muted2); font-size: 13px; }
+    #report-output table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    #report-output th {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--muted2);
+    }
+    #report-output td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      color: var(--muted2);
+    }
+    #report-output tr:nth-child(even) td { background: rgba(255,255,255,0.01); }
+    #report-output blockquote {
+      border-left: 3px solid var(--accent);
+      padding: 12px 16px;
+      background: rgba(59,130,246,0.06);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+    }
+    #report-output ul, #report-output ol { padding-left: 20px; margin-bottom: 12px; }
+    #report-output li { color: var(--muted2); margin-bottom: 4px; }
+    #report-output hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    /* verdict highlights */
+    #report-output td:has(strong) strong { font-weight: 700; }
+
+    /* ─── Toast ─── */
+    #toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 100;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.error { border-color: rgba(239,68,68,0.4); color: var(--danger); }
+    #toast.success { border-color: rgba(16,185,129,0.4); color: var(--success); }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="shell">
+    <!-- Header -->
+    <header>
+      <div class="badge">AI-Powered</div>
+      <h1>Motor Claims Fraud Detector</h1>
+      <p>Upload a claim pack and our multimodal AI pipeline will assess it against eight fraud detectors in minutes.</p>
+    </header>
+
+    <!-- Instructions card -->
+    <div class="card" style="margin-bottom: 24px; border-left: 3px solid var(--accent); background: rgba(17, 24, 39, 0.9);">
+      <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleInstructions()">
+        <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:8px;">
+          <span>📖 How to Use the Fraud Detector</span>
+        </div>
+        <span id="instructions-toggle-icon" style="font-size:12px; color:var(--muted); transition:transform 0.2s;">▼ Collapse</span>
+      </div>
+
+      <div id="instructions-body" style="margin-top: 16px; font-size: 13px; line-height: 1.6; color: var(--muted2);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px;">
+          <div style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">1. Access Key</div>
+            <div>Enter your authorized team access key to authenticate.</div>
+          </div>
+          <div style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">2. Case Reference</div>
+            <div>Enter your claim ID (e.g. <code>CASE-155</code>) or leave blank to auto-generate.</div>
+          </div>
+          <div style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">3. Upload Files</div>
+            <div>Drag &amp; drop PDFs (forms, quotes) and JPG/PNG damage photos.</div>
+          </div>
+          <div style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">4. View Verdict</div>
+            <div>Click <b>Analyse Pack</b> to receive the fraud verdict &amp; full rationale.</div>
+          </div>
+        </div>
+
+        <div style="background: rgba(59, 130, 246, 0.08); border-left: 2px solid var(--accent); padding: 8px 12px; border-radius: 4px; font-size: 12px;">
+          💡 <b>Testing with sample cases:</b> You can drag &amp; drop files directly from any folder in <code>cases/CASE-XXX/</code> in your repo (e.g. <code>form.pdf</code>, <code>quotation.pdf</code>, and photos in <code>evidence/</code>).
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload card -->
+    <div class="card">
+      <div class="card-title">Claim Pack Upload</div>
+
+      <label for="api-key">Access Key</label>
+      <input type="password" id="api-key" placeholder="Enter your access key" autocomplete="off" />
+
+      <label for="case-id">Case Reference <span style="color:var(--muted);font-weight:400">(optional — e.g. CASE-155, or leave blank to auto-generate)</span></label>
+      <input type="text" id="case-id" placeholder="e.g. CASE-155" />
+
+      <label>Claim Documents &amp; Photos</label>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="file-input" multiple accept=".pdf,.jpg,.jpeg,.png" />
+        <span class="dropzone-icon">📂</span>
+        <div class="dropzone-label">Drop files here or click to browse</div>
+        <div class="dropzone-hint">Accepted: PDF (claim form, quotation, police report) · JPG/PNG (damage photos)</div>
+      </div>
+      <div id="file-list"></div>
+
+      <button class="btn" id="submit-btn" disabled>
+        <span id="btn-text">Select files to continue</span>
+      </button>
+    </div>
+
+    <!-- Status panel -->
+    <div class="card" id="status-panel">
+      <div class="card-title">Analysis Status</div>
+      <div class="status-bar">
+        <div class="status-dot running" id="status-dot"></div>
+        <div class="status-meta">
+          <div class="status-label" id="status-label">Uploading files…</div>
+          <div class="status-sub" id="status-sub">Preparing claim pack for analysis</div>
+        </div>
+        <div id="status-time" style="font-size:12px;color:var(--muted);white-space:nowrap;"></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar indeterminate" id="progress-bar"></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);text-align:center">
+        The pipeline runs two model calls per claim — photo reading then full detector analysis. Typically 2–5 minutes.
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <div id="results-panel">
+      <div class="results-header">
+        <h2>📋 Analysis Report</h2>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-secondary" onclick="resetForm()">↺ New Analysis</button>
+          <button class="btn-secondary" onclick="downloadReport()">⬇ Download .md</button>
+        </div>
+      </div>
+      <div id="report-output"></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    // ── State ────────────────────────────────────────────────────────────────
+    let selectedFiles = [];
+    let pollingTimer  = null;
+    let currentRun    = null;   // { run_id, execution_name, case_id }
+    let reportMarkdown = '';
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const apiKey = () => $('api-key').value.trim();
+
+    function clearAllFiles() {
+      selectedFiles = [];
+      renderFileList();
+    }
+
+    function resetForm() {
+      selectedFiles = [];
+      renderFileList();
+      $('case-id').value = '';
+      $('results-panel').style.display = 'none';
+      $('status-panel').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleInstructions() {
+      const body = $('instructions-body');
+      const icon = $('instructions-toggle-icon');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        icon.textContent = '▼ Collapse';
+      } else {
+        body.style.display = 'none';
+        icon.textContent = '▶ Expand';
+      }
+    }
+
+    function toast(msg, type = '') {
+      const el = $('toast');
+      el.textContent = msg;
+      el.className = `show ${type}`;
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.className = ''; }, 3500);
+    }
+
+    function fmtSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function fileIcon(name) {
+      if (name.match(/\.(jpg|jpeg|png)$/i)) return '🖼';
+      if (name.match(/\.pdf$/i)) return '📄';
+      return '📎';
+    }
+
+    function renderFileList() {
+      const list = $('file-list');
+      list.innerHTML = '';
+      if (!selectedFiles.length) {
+        $('submit-btn').disabled = true;
+        $('btn-text').textContent = 'Select files to continue';
+        return;
+      }
+
+      const pdfs = selectedFiles.filter(f => f.name.match(/\.pdf$/i));
+      const photos = selectedFiles.filter(f => f.name.match(/\.(jpg|jpeg|png)$/i));
+      const others = selectedFiles.filter(f => !f.name.match(/\.(pdf|jpg|jpeg|png)$/i));
+
+      // Pack completeness banner
+      const badge = document.createElement('div');
+      if (pdfs.length > 0 && photos.length > 0) {
+        badge.className = 'pack-badge ready';
+        badge.innerHTML = `<span>✓ Complete Claim Pack: ${pdfs.length} Document(s) &amp; ${photos.length} Damage Photo(s)</span>
+                           <button type="button" class="link-btn" style="color:inherit; text-decoration:underline;" onclick="clearAllFiles()">Clear all</button>`;
+      } else if (pdfs.length > 0) {
+        badge.className = 'pack-badge partial';
+        badge.innerHTML = `<span>ℹ️ ${pdfs.length} Document(s) added (No damage photos attached)</span>
+                           <button type="button" class="link-btn" style="color:inherit; text-decoration:underline;" onclick="clearAllFiles()">Clear all</button>`;
+      } else {
+        badge.className = 'pack-badge partial';
+        badge.innerHTML = `<span>⚠️ ${photos.length} Photo(s) added (Claim form PDF recommended)</span>
+                           <button type="button" class="link-btn" style="color:inherit; text-decoration:underline;" onclick="clearAllFiles()">Clear all</button>`;
+      }
+      list.appendChild(badge);
+
+      // Render PDFs
+      if (pdfs.length > 0) {
+        const group = document.createElement('div');
+        group.innerHTML = `<div class="file-group-title">📄 Claim Documents (${pdfs.length})</div>`;
+        const wrap = document.createElement('div');
+        wrap.className = 'file-chips-wrap';
+        pdfs.forEach(f => {
+          const idx = selectedFiles.indexOf(f);
+          wrap.innerHTML += `
+            <div class="file-chip">
+              <span class="file-icon">📄</span>
+              <span class="file-name">${f.name}</span>
+              <span class="file-size">${fmtSize(f.size)}</span>
+              <button class="remove-btn" onclick="removeFile(${idx})">✕</button>
+            </div>`;
+        });
+        group.appendChild(wrap);
+        list.appendChild(group);
+      }
+
+      // Render Photos
+      if (photos.length > 0) {
+        const group = document.createElement('div');
+        group.innerHTML = `<div class="file-group-title">🖼️ Damage Evidence Photos (${photos.length})</div>`;
+        const wrap = document.createElement('div');
+        wrap.className = 'file-chips-wrap';
+        photos.forEach(f => {
+          const idx = selectedFiles.indexOf(f);
+          wrap.innerHTML += `
+            <div class="file-chip">
+              <span class="file-icon">🖼</span>
+              <span class="file-name">${f.name}</span>
+              <span class="file-size">${fmtSize(f.size)}</span>
+              <button class="remove-btn" onclick="removeFile(${idx})">✕</button>
+            </div>`;
+        });
+        group.appendChild(wrap);
+        list.appendChild(group);
+      }
+
+      // Render Others
+      if (others.length > 0) {
+        const group = document.createElement('div');
+        group.innerHTML = `<div class="file-group-title">📎 Other Files (${others.length})</div>`;
+        const wrap = document.createElement('div');
+        wrap.className = 'file-chips-wrap';
+        others.forEach(f => {
+          const idx = selectedFiles.indexOf(f);
+          wrap.innerHTML += `
+            <div class="file-chip">
+              <span class="file-icon">📎</span>
+              <span class="file-name">${f.name}</span>
+              <span class="file-size">${fmtSize(f.size)}</span>
+              <button class="remove-btn" onclick="removeFile(${idx})">✕</button>
+            </div>`;
+        });
+        group.appendChild(wrap);
+        list.appendChild(group);
+      }
+
+      const btn = $('submit-btn');
+      btn.disabled = false;
+      $('btn-text').textContent = `Analyse Claim Pack (${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''})`;
+    }
+
+    function removeFile(index) {
+      selectedFiles.splice(index, 1);
+      renderFileList();
+    }
+
+    // ── File selection ────────────────────────────────────────────────────────
+    $('file-input').addEventListener('change', e => {
+      selectedFiles = [...selectedFiles, ...e.target.files];
+      renderFileList();
+      e.target.value = '';
+    });
+
+    const dz = $('dropzone');
+    dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', ()  => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('drag-over');
+      selectedFiles = [...selectedFiles, ...e.dataTransfer.files];
+      renderFileList();
+    });
+
+    // ── Submit ────────────────────────────────────────────────────────────────
+    $('submit-btn').addEventListener('click', async () => {
+      if (!apiKey()) { toast('Enter your access key first.', 'error'); return; }
+      if (!selectedFiles.length) { toast('No files selected.', 'error'); return; }
+
+      // Lock UI
+      $('submit-btn').disabled = true;
+      $('btn-text').innerHTML = '<div class="btn-spinner"></div> Uploading…';
+      $('status-panel').style.display = 'block';
+      $('results-panel').style.display = 'none';
+      setStatus('running', 'Uploading files…', 'Sending claim pack to Cloud Storage');
+
+      const form = new FormData();
+      selectedFiles.forEach(f => form.append('files[]', f));
+      const caseId = $('case-id').value.trim();
+      if (caseId) form.append('case_id', caseId);
+
+      let data;
+      try {
+        const resp = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'X-API-Key': apiKey() },
+          body: form,
+        });
+        data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || resp.statusText);
+      } catch (err) {
+        toast('Upload failed: ' + err.message, 'error');
+        resetSubmit();
+        return;
+      }
+
+      currentRun = { run_id: data.run_id, execution_name: data.execution_name, case_id: data.case_id };
+      toast(`Job started for ${data.case_id}`, 'success');
+      setStatus('running', 'Job running…', `Case ${data.case_id} · Execution triggered`);
+
+      const startTime = Date.now();
+      pollStatus(startTime);
+    });
+
+    // ── Status polling ─────────────────────────────────────────────────────────
+    function setStatus(state, label, sub) {
+      const dot = $('status-dot');
+      dot.className = 'status-dot ' + state;
+      $('status-label').textContent = label;
+      $('status-sub').textContent   = sub;
+    }
+
+    function pollStatus(startTime) {
+      clearTimeout(pollingTimer);
+      pollingTimer = setTimeout(async () => {
+        const elapsed = Math.round((Date.now() - startTime) / 1000);
+        $('status-time').textContent = fmtElapsed(elapsed);
+
+        let data;
+        try {
+          const resp = await fetch(
+            `/api/status?execution_name=${encodeURIComponent(currentRun.execution_name)}`,
+            { headers: { 'X-API-Key': apiKey() } }
+          );
+          data = await resp.json();
+        } catch (_) {
+          pollStatus(startTime);   // retry on transient error
+          return;
+        }
+
+        if (data.state === 'succeeded') {
+          setStatus('succeeded', 'Analysis complete ✓', 'Fetching results from Cloud Storage…');
+          $('progress-bar').classList.remove('indeterminate');
+          $('progress-bar').style.width = '100%';
+          await fetchResults();
+        } else if (data.state === 'failed' || data.state === 'cancelled') {
+          setStatus('failed', 'Job ' + data.state, 'Check Cloud Run logs for details.');
+          $('progress-bar').style.width = '0';
+          resetSubmit();
+        } else {
+          if (elapsed < 25) {
+            setStatus('running', 'Initializing Pipeline…', `Preparing claim pack files for ${currentRun.case_id}`);
+          } else if (elapsed < 75) {
+            setStatus('running', 'Stage 1: Photo Reading…', 'Multimodal AI reading vehicle damage photographs');
+          } else {
+            setStatus('running', 'Stage 2: Fraud Detectors…', 'Evaluating 8 fraud detectors, pricing & prior claims');
+          }
+          pollStatus(startTime);
+        }
+      }, 8000);   // poll every 8 s
+    }
+
+    function fmtElapsed(s) {
+      if (s < 60) return s + 's';
+      return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+    }
+
+    // ── Results ───────────────────────────────────────────────────────────────
+    async function fetchResults() {
+      try {
+        const resp = await fetch(`/api/results?run_id=${encodeURIComponent(currentRun.run_id)}`,
+          { headers: { 'X-API-Key': apiKey() } });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error);
+        reportMarkdown = data.report;
+        renderReport(reportMarkdown);
+        $('results-panel').style.display = 'block';
+        resetSubmit();
+        toast('Report ready!', 'success');
+      } catch (err) {
+        toast('Could not fetch results: ' + err.message, 'error');
+        resetSubmit();
+      }
+    }
+
+    function renderReport(md) {
+      $('report-output').innerHTML = simpleMarkdown(md);
+    }
+
+    function downloadReport() {
+      const blob = new Blob([reportMarkdown], { type: 'text/markdown' });
+      const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(blob),
+        download: `fraud-report-${currentRun?.case_id || 'results'}.md`,
+      });
+      a.click();
+    }
+
+    // ── Very simple markdown → HTML ───────────────────────────────────────────
+    function simpleMarkdown(md) {
+      const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+      // Code blocks (must come before inline code)
+      md = md.replace(/```[\w]*\n([\s\S]*?)```/g, (_, c) => `<pre><code>${esc(c)}</code></pre>`);
+
+      // Tables
+      md = md.replace(/((?:\|.*\|\n?)+)/g, m => {
+        const rows = m.trim().split('\n').filter(r => !/^\|[\s\-|]+\|$/.test(r));
+        const [head, ...body] = rows;
+        const th = head.split('|').slice(1,-1).map(c => `<th>${c.trim()}</th>`).join('');
+        const trs = body.map(r => '<tr>' + r.split('|').slice(1,-1).map(c => `<td>${inline(c.trim())}</td>`).join('') + '</tr>').join('');
+        return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
+      });
+
+      // Block elements
+      md = md.replace(/^(#{1,6})\s+(.+)$/gm, (_, h, t) => `<h${h.length}>${inline(t)}</h${h.length}>`);
+      md = md.replace(/^> (.+)$/gm, (_, t) => `<blockquote><p>${inline(t)}</p></blockquote>`);
+      md = md.replace(/^\s*[-*]\s+(.+)$/gm, (_, t) => `<li>${inline(t)}</li>`);
+      md = md.replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>');
+      md = md.replace(/^---$/gm, '<hr>');
+
+      // Paragraphs
+      md = md.split(/\n{2,}/).map(block => {
+        if (/^<(h[1-6]|pre|ul|ol|li|hr|table|blockquote)/.test(block.trim())) return block;
+        const t = inline(block.trim());
+        return t ? `<p>${t}</p>` : '';
+      }).join('\n');
+
+      return md;
+    }
+
+    function inline(t) {
+      return t
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent)">$1</a>');
+    }
+
+    function resetSubmit() {
+      $('submit-btn').disabled = selectedFiles.length === 0;
+      $('btn-text').textContent = selectedFiles.length
+        ? `Analyse ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
+        : 'Select files to continue';
+    }
+  </script>
+</body>
+</html>
