@@ -13,6 +13,7 @@ env/
 
 # Run logs & generated reports
 *.log
+photo_cache/
 fraud_results_raw/
 FRAUD_DETECTION_RESULTS.md
 

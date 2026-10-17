@@ -103,6 +103,15 @@ so the only defensible question about them is *what kind of damage is this* — 
 *which panel is this*. Isolating that into its own call stops the detector stage
 from re-reading the images inconsistently and reasoning off the worse reading.
 
+### Photo Deduplication & Caching
+- **Content Hashing:** Computes SHA-256 hashes of all incoming vehicle photos.
+- **Smart Cache Reuse:** If an identical photo was already analyzed in a previous claim or duplicate submission, the cached damage observations are reused instantly without making any Vision API call.
+- **Storage:** Persisted locally in `photo_cache/` and in Google Cloud Storage (`gs://<BUCKET>/cache/photos/<sha256>.json`).
+
+### Cloud Storage Lifecycle Management
+- **30-Day Nearline Transition:** Claim packs in `gs://fraud-detection-511308-fraud-data` automatically transition from Standard to Nearline storage after 30 days (reducing storage costs by >70%).
+- **90-Day Coldline Transition:** Moves to Coldline after 90 days for archival (>85% savings). Configured via `gcs_lifecycle.json`.
+
 Other flags worth knowing:
 
 ```

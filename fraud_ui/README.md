@@ -117,6 +117,26 @@ To scale smoothly under high concurrency without dropping requests or triggering
 
 ---
 
+## 📸 Photo Deduplication & SHA-256 Caching
+
+Incoming vehicle damage photos are checked for exact duplicates across cases and submissions:
+* **Cryptographic Hashing:** Computes SHA-256 hashes of all uploaded vehicle photographs.
+* **Instant Cache Hits:** If an identical photo was already analyzed in a previous claim or resubmission, the pipeline immediately reuses the cached damage classifications (`classes`, `severity`, `frame_share`, `description`) without invoking the Vision API.
+* **Cost & Latency Reduction:** Avoids paying for redundant multimodal vision calls and drops Stage 1 inference latency to ~0 seconds for duplicate photos.
+* **Cross-Claim Tracking:** Flags identical photos that appeared under different claim references as potential fraud indicators.
+* **Hybrid Storage:** Persisted locally in `photo_cache/` and synchronized to Google Cloud Storage at `gs://<BUCKET>/cache/photos/<sha256>.json`.
+
+---
+
+## 🗄️ Cloud Storage Lifecycle Management
+
+To optimize long-term storage costs for claims evidence and generated reports:
+* **30-Day Nearline Transition:** Claim pack inputs and analysis outputs automatically transition from Standard to Nearline storage after 30 days, slashing storage costs by **>70%**.
+* **90-Day Coldline Transition:** Moves inactive claims older than 90 days to Coldline storage for multi-year compliance archival, saving **>85%**.
+* **Configuration:** Managed via [gcs_lifecycle.json](file:///c:/Users/kevin/Downloads/fraud_detection-20261011T023733Z-1-001/fraud_detection/gcs_lifecycle.json) and applied to `gs://fraud-detection-511308-fraud-data`.
+
+---
+
 ## 🛡️ Detectors Evaluated (D1–D8)
 
 | Code | Detector | What It Evaluates |

@@ -56,6 +56,7 @@ you submit -- see the warning in README.md.
 from __future__ import annotations
 
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -636,6 +637,80 @@ class RateLimiter:
                 time.sleep(sleep_time)
 
 
+class PhotoCache:
+    """Computes SHA-256 hashes of incoming vehicle photos and caches Stage 1
+    damage classifications to avoid redundant vision model calls on duplicate
+    submissions or cross-claim identical photos."""
+
+    def __init__(self, cache_dir: Path | None = None, gcs_bucket: str | None = None) -> None:
+        self.cache_dir = cache_dir or (ROOT / "photo_cache")
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.gcs_bucket = gcs_bucket or os.environ.get("GCS_BUCKET")
+        self._gcs_client = None
+
+    @staticmethod
+    def hash_blob(blob: bytes) -> str:
+        return hashlib.sha256(blob).hexdigest()
+
+    def _get_gcs_blob(self, sha256: str):
+        if not self.gcs_bucket:
+            return None
+        if self._gcs_client is None:
+            try:
+                from google.cloud import storage
+                self._gcs_client = storage.Client()
+            except Exception:
+                return None
+        try:
+            bucket = self._gcs_client.bucket(self.gcs_bucket)
+            return bucket.blob(f"cache/photos/{sha256}.json")
+        except Exception:
+            return None
+
+    def get(self, sha256: str) -> dict | None:
+        local_file = self.cache_dir / f"{sha256}.json"
+        if local_file.exists():
+            try:
+                with open(local_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+
+        # Check Cloud Storage bucket cache
+        blob = self._get_gcs_blob(sha256)
+        if blob and blob.exists():
+            try:
+                data = json.loads(blob.download_as_text(encoding="utf-8"))
+                with open(local_file, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+                return data
+            except Exception:
+                pass
+        return None
+
+    def put(self, sha256: str, observation: dict, case_ref: str = "") -> None:
+        data = dict(observation)
+        data["sha256"] = sha256
+        data["first_seen_case"] = data.get("first_seen_case") or case_ref
+        data["cached_at"] = datetime.now().isoformat()
+
+        # Save locally
+        local_file = self.cache_dir / f"{sha256}.json"
+        try:
+            with open(local_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
+
+        # Save to GCS bucket cache
+        blob = self._get_gcs_blob(sha256)
+        if blob:
+            try:
+                blob.upload_from_string(json.dumps(data, indent=2), content_type="application/json")
+            except Exception:
+                pass
+
+
 def post_json(url: str, payload: dict, timeout: int, args=None, log: Log | None = None) -> dict:
     limiter = getattr(args, "rate_limiter", None) if args else None
     max_retries = 4
@@ -775,7 +850,12 @@ class CasePack:
         self.images = 0
 
         pdfs = sorted(case_dir.glob("*.pdf"))
-        photos = sorted((case_dir / "evidence").glob("*.jpg"))
+        evidence_dir = case_dir / "evidence"
+        photos = []
+        if evidence_dir.is_dir():
+            for pattern in ("*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG"):
+                photos.extend(evidence_dir.glob(pattern))
+            photos = sorted(set(photos))
 
         if doc_mode == "image":
             for pdf in pdfs:
@@ -1021,26 +1101,52 @@ def call_model_with_fallback(system: str, user_parts, args, max_tokens: int, thi
 def classify_photos(pack: CasePack, classes: str, args, log: Log) -> list[dict]:
     """Stage 1: read the damage class off every photograph.
 
-    The reasoning channel is ON here and only here. Reasoning is what makes this
-    model read a crop correctly, but on the full detector task it never
-    terminates, so stage 2 runs with it off.
+    Includes SHA-256 deduplication & caching:
+    - Computes SHA-256 hash of each photo blob.
+    - If cached, reuses the damage reading without making a vision API call.
+    - Only sends uncached photos to the vision model, then writes them to cache.
     """
     if not pack.photo_blobs:
         log("no photographs; skipping the photo-reading stage", indent=1)
         return []
 
-    parts: list[dict] = []
+    cache = getattr(args, "photo_cache", None) or PhotoCache()
+    final_observations: dict[str, dict] = {}
+    missing_blobs: list[tuple[str, bytes, str]] = []
+
     for name, blob in pack.photo_blobs:
+        sha256 = PhotoCache.hash_blob(blob)
+        cached = cache.get(sha256)
+        if cached:
+            obs = {
+                "file": name,
+                "classes": cached.get("classes", []),
+                "severity": cached.get("severity", "minor"),
+                "share": cached.get("share", ""),
+                "description": cached.get("description", ""),
+                "_cached": True,
+                "_sha256": sha256,
+            }
+            cross_claim = f" [first observed in {cached.get('first_seen_case')}]" if cached.get("first_seen_case") and cached.get("first_seen_case") != pack.reference else ""
+            log(f"  {name} (SHA-256: {sha256[:10]}...) -> CACHE HIT! Reusing damage reading{cross_claim} (0 model calls)", indent=1)
+            final_observations[name] = obs
+        else:
+            missing_blobs.append((name, blob, sha256))
+
+    if not missing_blobs:
+        log(f"STAGE 1: All {len(pack.photo_blobs)} photo(s) retrieved from cache! Vision model calls avoided.", indent=1)
+        return [final_observations[name] for name, _ in pack.photo_blobs]
+
+    log(f"STAGE 1 photo reading: {len(missing_blobs)}/{len(pack.photo_blobs)} new image(s) to process ({len(final_observations)} cached)", indent=1)
+
+    parts: list[dict] = []
+    missing_names = []
+    for name, blob, _ in missing_blobs:
         parts.append({"type": "text", "text": name})
         parts.append(image_part(blob))
+        missing_names.append(name)
 
-    log(f"STAGE 1 photo reading: {len(pack.photo_blobs)} image(s)", indent=1)
     system = PHOTO_STAGE_SYSTEM.format(classes=classes)
-
-    # Reasoning length on this model is not bounded by the task -- on some
-    # photographs it reasons for thousands of tokens and never commits. So stage 1
-    # escalates rather than dies: a bigger budget, then reasoning off as a last
-    # resort. Every attempt is logged so a degraded reading is visible.
     ladder = [
         (args.photo_max_tokens, True),
         (args.photo_max_tokens * 2, True),
@@ -1054,17 +1160,26 @@ def classify_photos(pack: CasePack, classes: str, args, log: Log) -> list[dict]:
         content, _meta = call_model_with_fallback(system, parts, args, budget, thinking,
                                                  "stage1 photos", log, chain=args.vision_chain)
         try:
-            observations = parse_observations(content, pack.photos)
+            observations = parse_observations(content, missing_names)
         except (ValueError, json.JSONDecodeError) as exc:
             failure = exc
             log(f"stage 1 attempt {attempt} unusable: {exc}", indent=1)
             continue
         if attempt > 1:
             log(f"stage 1 recovered on attempt {attempt}", indent=1)
+        
+        # Save newly read observations into cache
         for item in observations:
-            log(f"  {item.get('file')}: classes={item.get('classes')} "
-                f"severity={item.get('severity')}", indent=1)
-        return observations
+            name = item.get("file")
+            matching_hash = next((h for n, _, h in missing_blobs if n == name), None)
+            if matching_hash:
+                cache.put(matching_hash, item, case_ref=pack.reference)
+            final_observations[name] = item
+            log(f"  {name}: classes={item.get('classes')} "
+                f"severity={item.get('severity')} [cached with SHA-256: {matching_hash[:10] if matching_hash else '?'}]", indent=1)
+        
+        return [final_observations[name] for name, _ in pack.photo_blobs]
+
     raise failure or ValueError("photo reading failed on every attempt")
 
 
@@ -1434,6 +1549,7 @@ def main(argv=None) -> int:
     args.text_model = args.text_chain[0]
     args.model_note = f"vision: {' -> '.join(args.vision_chain)} | text: {' -> '.join(args.text_chain)}"
     args.rate_limiter = RateLimiter(args.rpm)
+    args.photo_cache = PhotoCache()
     if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
         sys.stdout.reconfigure(encoding="utf-8")
 
