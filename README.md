@@ -1,234 +1,224 @@
-# Motor claim fraud detection — partner pack
+# Motor Claims Fraud Detector
 
-A multimodal LLM reads a motor insurance claim pack (claim form PDF, repair
-quotation PDF, police report where present, and damage photographs), applies
-eight fraud detectors, and returns a verdict with a written rationale.
-
-Everything needed is in this folder. One script, one command.
-
-```
-run_fraud_detection.py     the whole pipeline: prompt, reference tables, report writer
-requirements.txt          pypdf, and pypdfium2 only for --doc-mode image
-cases/                    13 anonymised claim packs (what the model sees)
-reference/                price book + prior claims history (injected into the prompt)
-ground_truth.json         real verdicts, for scoring only — see the warning below
-```
-
-## 🌐 Hosted Web UI (Cloud Deployment)
-
-A web UI is deployed on Google Cloud Run for uploading motor claim packs and reviewing fraud assessment reports directly in your browser:
-
-- **Live URL:** [https://fraud-ui-1082243885044.asia-southeast1.run.app](https://fraud-ui-1082243885044.asia-southeast1.run.app)
-- **Access Key:** Configured securely via Secret Manager / environment variable (`UI_API_KEY`)
-- **User Guide:** Detailed documentation in [fraud_ui/README.md](fraud_ui/README.md)
-
-### Step-by-Step UI Guide:
-
-| Step | Action | Description |
-|---|---|---|
-| **1. Authenticate** | Enter Access Key | Enter your authorized team access key. |
-| **2. Case ID** *(optional)* | Set Case Reference | Type your claim reference (e.g., `CASE-155`) or leave blank to auto-generate a unique ID. |
-| **3. Attach Files** | Drag & Drop Claim Pack | Drop documents (PDF) and damage photos (JPG/PNG). The UI automatically categorizes and validates them. |
-| **4. Run Analysis** | Click "Analyse Pack" | The container runs Stage 1 (photo reading) and Stage 2 (fraud detector evaluation). |
-| **5. Review Report** | View & Download | Inspect the fraud verdict, confidence, triggered rules (D1–D8), damage readings, and download as `.md`. |
-
-> 💡 **Quick Test with Sample Cases:**  
-> You can test the Web UI immediately using any sample folder in `cases/` (e.g. `cases/CASE-155/`):
-> 1. Set Case Reference: `CASE-155`
-> 2. Drag & drop `cases/CASE-155/form.pdf`, `cases/CASE-155/quotation.pdf`, and `cases/CASE-155/evidence/photo_01.jpg` into the upload zone.
-> 3. Click **Analyse Claim Pack (3 files)** to watch the live progress and review the verdict.
+An enterprise multimodal AI system for automated motor insurance claim fraud detection. It analyzes claim packs (claim form PDFs, repair estimates/quotations, police/survey reports, and vehicle damage photographs), evaluates eight specialized fraud detectors (D1–D8), and generates an adjuster-ready investigation report with transparent reasoning.
 
 ---
 
-## 💻 Quick start (Local CLI)
+## 🌐 Live Web Application
+
+The application is deployed on Google Cloud Platform and accessible via a modern web interface:
+
+| Parameter | Details |
+|---|---|
+| **App URL** | [https://fraud-ui-1082243885044.asia-southeast1.run.app](https://fraud-ui-1082243885044.asia-southeast1.run.app) |
+| **Authentication** | Access Key configured securely via Google Secret Manager (`UI_API_KEY`) |
+| **Hosting** | Google Cloud Run (Fully serverless, autoscaling, scales to zero when idle) |
+| **Region** | `asia-southeast1` (Singapore) |
+
+---
+
+## 🚀 Step-by-Step Web UI Guide
+
+```
+┌──────────────┐     ┌──────────────────────┐     ┌─────────────────────┐     ┌─────────────────┐     ┌────────────────────┐
+│ 1. Open App  │ ──► │ 2. Enter Access Key  │ ──► │ 3. Drag & Drop Pack │ ──► │ 4. Click Run   │ ──► │ 5. Review & Export │
+│ & Dashboard  │     │    & Case Reference  │     │    (PDFs & Photos)  │     │    "Analyse"    │     │    (Report / .md)  │
+└──────────────┘     └──────────────────────┘     └─────────────────────┘     └─────────────────┘     └────────────────────┘
+```
+
+### 1. Authenticate
+Open **[https://fraud-ui-1082243885044.asia-southeast1.run.app](https://fraud-ui-1082243885044.asia-southeast1.run.app)** and enter your assigned **Access Key** into the authentication field.
+
+### 2. Set Case Reference *(Optional)*
+Enter your internal claim identifier (e.g. `CASE-155` or `CLM-2026-9810`). If left blank, a unique reference ID (e.g. `CASE-A1B2C3`) is generated automatically.
+
+### 3. Attach Claim Documents & Evidence Photos
+Drag and drop (or click to browse) all files belonging to the claim:
+* **Documents (`.pdf`):**
+  * Completed Claim Form (loss description, dates, driver/insured statement)
+  * Repairer Quotation / Estimate (itemized parts and labour rates)
+  * Police Report or Independent Survey Report (if available)
+* **Photographs (`.jpg`, `.jpeg`, `.png`):**
+  * Vehicle damage photographs
+  * Accident scene photos
+  * Odometer and license plate photos
+
+> **Automatic File Routing:**  
+> The backend automatically categorizes `.pdf` documents to the claim root and routes images to the `evidence/` subfolder required by the vision pipeline.
+
+### 4. Click "Analyse Pack"
+The UI uploads the files to Google Cloud Storage (`gs://fraud-detection-511308-fraud-data/inputs/<run_id>/`) and dispatches the job to the backend runner. A live progress tracker displays real-time execution status.
+
+### 5. Review & Export Findings
+Once analysis completes, the browser presents:
+* **Verdict Summary:** Overall Fraud Verdict (`clean` / `fraud`), Fraud Probability (0–100%), Confidence, and Primary Detector.
+* **Photographic Evidence:** Damage observations (`dent`, `scratch`, `crack`, `glass shatter`, `lamp broken`, `tire flat`) identified per photograph.
+* **Detectors Triggered (D1–D8):** Specific fraud rules flagged with underlying evidence.
+* **Red Flags & Counter-Evidence:** Inconsistencies vs. genuine indicators.
+* **Recommended Next Steps:** Actionable guidance for claims adjusters and Special Investigation Units (SIU).
+* **Export:** Click **⬇ Download .md** to save the markdown report.
+
+---
+
+### 🧪 Testing with Included Sample Cases
+
+The repository includes 13 anonymized sample claim packs in the `cases/` directory:
+
+1. In the Web UI, enter Case Reference: `CASE-155`
+2. Drag and drop these files from `cases/CASE-155/`:
+   * `cases/CASE-155/form.pdf`
+   * `cases/CASE-155/quotation.pdf`
+   * `cases/CASE-155/evidence/photo_01.jpg`
+3. Click **Analyse Pack** to test live execution.
+
+---
+
+## ⚡ Cloud Architecture & Scaled Production Pattern
+
+The system decouples user ingestion from heavy AI inference to handle high concurrency smoothly without dropping requests or encountering API rate-limit errors:
+
+```
+[User Browser]
+      │
+      ▼
+[Cloud Run: fraud-ui] ──── Uploads Files ────► [Cloud Storage: gs://...-fraud-data]
+      │                                                │
+      ▼ Enqueues Task                                  │ Reads Claim Pack
+[Cloud Tasks Queue: fraud-claims-queue]                │
+      │                                                ▼
+      └──────── Dispatches (Rate Limited) ────► [Cloud Run Job: fraud-detection-job]
+                                                       │
+                                                       ├──► Stage 1: Photo Reading (Vision Chain)
+                                                       ├──► Stage 2: Fraud Evaluation (Text Chain)
+                                                       └──► Writes JSON & Markdown Reports
+```
+
+### 1. Cloud Tasks Decoupled Queue & Rate Limiting
+* **Queue Name:** `projects/fraud-detection-511308/locations/asia-southeast1/queues/fraud-claims-queue`
+* **Concurrency & Pacing:**
+  * `max_dispatches_per_second`: `10`
+  * `max_concurrent_dispatches`: `20`
+* **Automatic Retries with Exponential Backoff:**
+  * `max_attempts`: `5`
+  * `min_backoff`: `5s`
+  * `max_backoff`: `60s`
+  * Automatically recovers from transient network hiccups or model timeouts without failing claims.
+
+### 2. Photo Deduplication & SHA-256 Caching
+* **Cryptographic Content Hashing:** Computes SHA-256 hashes of all incoming vehicle photographs.
+* **Zero-Cost Cache Hits:** If an identical photo was already analyzed in a previous submission or another claim, cached damage observations (`classes`, `severity`, `share`, `description`) are reused immediately.
+* **Cross-Claim Duplicate Detection:** Identifies when the exact same photograph is submitted across different case numbers—directly flagging duplicate claim fraud.
+* **Hybrid Storage:** Cached locally (`photo_cache/`) and in Google Cloud Storage (`gs://<BUCKET>/cache/photos/<sha256>.json`).
+
+### 3. Cloud Storage Lifecycle Management
+Managed via [gcs_lifecycle.json](gcs_lifecycle.json) on `gs://fraud-detection-511308-fraud-data`:
+* **30-Day Nearline Transition:** Claim inputs and analysis outputs automatically transition from Standard to Nearline storage after 30 days (**>70% cost reduction**).
+* **90-Day Coldline Transition:** Transitions to Coldline storage after 90 days for long-term audit and compliance archiving (**>85% cost reduction**).
+
+---
+
+## 🧠 Multimodal AI Pipeline & Multi-Model Fallback
+
+AI inference is isolated into two stages to prevent small vision models from hallucinating vehicle panel locations:
+
+```
+Claim Pack
+    │
+    ├──► Stage 1: Photo Reading (Vision Model Chain)
+    │       Reads every photo for physical damage classes.
+    │       Chain: gemini-3.8-flash ──(fallback)──► gemini-3.7-flash ──(fallback)──► gemini-3.6-flash
+    │
+    └──► Stage 2: Fraud Detectors (Text Model Chain)
+            Synthesizes documents, photo findings & reference rules D1–D8.
+            Chain: gemini-3.7-flash ──(fallback)──► gemini-3.5-flash-lite ──(fallback)──► gemini-2.5-flash
+```
+
+* **Smooth Rate Pacing:** Paced with minimum 12-second intervals (~5 RPM) to stay within free-tier quotas.
+* **Automatic Quota Failover:** If a primary model encounters rate limits (HTTP 429) or quota exhaustion, it immediately falls back to the secondary and tertiary backup models with zero manual intervention.
+
+---
+
+## 🛡️ The Eight Fraud Detectors (D1–D8)
+
+| Code | Detector | What It Evaluates | Trigger Condition |
+|---|---|---|---|
+| **D1** | Ghost / Invented Damage | Claimed parts vs. photographic evidence | A claimed part has no photograph of a damage class it could exhibit |
+| **D2** | Severity Inflation | Declared severity vs. observed damage | Declared severity is 2+ bands above observed **and** estimate exceeds 4x market |
+| **D3** | Pre-Existing / Staged Damage | Impact mechanics vs. physical marks | Loss narrative implies high energy, but evidence shows only superficial/cosmetic marks |
+| **D4** | Part Price & Invoice Inflation | Quotation prices vs. market price book | Quoted repair total exceeds 4x the market rate for the observed damage |
+| **D5** | Policy Inception / Exclusion Gate | Coverage validity and loss timeline | Incident date falls outside active policy coverage dates |
+| **D6** | Duplicate / Repeat Claim | Prior claims history overlap | Identical parts/vehicle claimed and settled in a prior claim |
+| **D7** | Wear-and-Tear as Collision | Age-related deterioration vs. impact | Low-speed collision narrative presented for cumulative wear/scuffs |
+| **D8** | Loss-Type Mismatch | Declared incident type vs. damage nature | Declared nature of loss admits none of the observed damage classes |
+
+---
+
+## 🔍 Critical Analysis Traps to Avoid
+
+1. **Claim Form Checkboxes vs. Quotation Items:**
+   * The PDF claim form prints a master list of all possible vehicle panels; checkboxes often flatten during PDF text extraction.
+   * **Rule:** The claimed parts are strictly determined by the **itemized quotation line items**, not the form's template options.
+2. **Close-Up Crops vs. Whole-Vehicle Panels:**
+   * Claim photos are tight close-up crops without full-vehicle context.
+   * **Rule:** Photographs only answer *what damage class is present* (`dent`, `scratch`, `crack`), not *which panel it belongs to*.
+3. **Declared Extent vs. Estimated Loss:**
+   * Forms print all severity levels (`Minor cosmetic`, `Moderate`, `Severe`). Cross-check narrative severity against the repairer estimate and market baseline.
+
+---
+
+## 💻 Local CLI Execution
+
+You can run the entire pipeline locally against any OpenAI-compatible API or local model runner:
 
 ```bash
+# 1. Install dependencies
 pip install -r requirements.txt
 
-# against a local llama.cpp server
-python run_fraud_detection.py --base-url http://127.0.0.1:8080/v1 --score
-
-# against a hosted model
+# 2. Run with Gemini (OpenAI-compatible endpoint)
 python run_fraud_detection.py \
-    --base-url https://openrouter.ai/api/v1 \
-    --api-key "$OPENROUTER_API_KEY" \
-    --model some/strong-vision-model \
+    --base-url "https://generativelanguage.googleapis.com/v1beta/openai" \
+    --api-key "$GEMINI_API_KEY" \
     --score
+
+# 3. Run against local llama.cpp
+python run_fraud_detection.py \
+    --base-url "http://127.0.0.1:8080/v1" \
+    --score
+
+# 4. Run a single case
+python run_fraud_detection.py --case CASE-155 --score
 ```
 
-Outputs land next to the script:
-
-| file | contents |
-|---|---|
-| `FRAUD_DETECTION_RESULTS.md` | the report: summary table, per-case rationale, detectors, scoring |
-| `fraud_results_raw/CASE-nnn.json` | the model's raw JSON per case, plus token usage and timing |
-| `fraud_detection_run.log` | every request and the model's full reply, including retries |
-
-## Pointing it at a different model
-
-Four settings, all available as flags or environment variables:
-
-| flag | env | meaning |
-|---|---|---|
-| `--base-url` | `FRAUD_API_BASE` | base URL **including** the version path, e.g. `http://127.0.0.1:8080/v1` |
-| `--api-key` | `FRAUD_API_KEY` | bearer token; a local server ignores it |
-| `--model` | `FRAUD_MODEL` | model name as the endpoint knows it |
-| `--flavor` | `FRAUD_API_FLAVOR` | `auto` (default), `llamacpp`, or `openai` |
-
-`auto` picks `llamacpp` for a localhost URL and `openai` for anything else. The
-only differences between the two dialects are authentication and two llama.cpp-only
-request fields (`cache_prompt` and `chat_template_kwargs`), which a hosted endpoint
-rejects with a 400. The chat format is identical either way: a system message plus
-interleaved text and `image_url` parts carrying base64 data URIs.
-
-So llama.cpp, vLLM, Ollama, LM Studio, OpenRouter and Gemini's OpenAI-compatible
-shim all work without touching the code. If a hosted endpoint rejects the request,
-try `--flavor llamacpp`; if a local one rejects `chat_template_kwargs`, try
-`--flavor openai`.
-
-Context window: the script asks llama.cpp for `n_ctx` and otherwise assumes 128k.
-A local server with a small window will clamp `max_tokens` and log a warning.
-
-## How it works
-
-Two model calls per claim, because one call does not work well on a small model:
-
-1. **Photo reading.** Each photograph is classified into the damage classes
-   `crack`, `glass shatter`, `lamp broken`, `dent`, `scratch`, `tire flat`.
-2. **Detector run.** Documents plus those readings, and no images, produce the
-   verdict JSON.
-
-The split matters. Photographs are tight close-up crops with no whole-vehicle shot,
-so the only defensible question about them is *what kind of damage is this* — never
-*which panel is this*. Isolating that into its own call stops the detector stage
-from re-reading the images inconsistently and reasoning off the worse reading.
-
-### Photo Deduplication & Caching
-- **Content Hashing:** Computes SHA-256 hashes of all incoming vehicle photos.
-- **Smart Cache Reuse:** If an identical photo was already analyzed in a previous claim or duplicate submission, the cached damage observations are reused instantly without making any Vision API call.
-- **Storage:** Persisted locally in `photo_cache/` and in Google Cloud Storage (`gs://<BUCKET>/cache/photos/<sha256>.json`).
-
-### Cloud Storage Lifecycle Management
-- **30-Day Nearline Transition:** Claim packs in `gs://fraud-detection-511308-fraud-data` automatically transition from Standard to Nearline storage after 30 days (reducing storage costs by >70%).
-- **90-Day Coldline Transition:** Moves to Coldline after 90 days for archival (>85% savings). Configured via `gcs_lifecycle.json`.
-
-Other flags worth knowing:
-
+### Useful CLI Flags:
 ```
---case CASE-155          one case (repeatable)
---doc-mode image        send rasterised PDF pages instead of extracted text
---photo-max-tokens N    stage-1 budget, raised automatically on a retry
---max-output-tokens N    stage-2 budget
---rescore               rebuild the report from saved JSON, no model calls
+--case <CASE_ID>         Process a specific case (repeatable)
+--doc-mode text|image    Use extracted text (fast, default) or rasterized PDF pages (image)
+--photo-max-tokens N     Stage 1 token budget (auto-escalates on retry)
+--max-output-tokens N    Stage 2 token budget
+--rescore                Rebuild report from saved JSON without re-running models
 ```
 
-`--doc-mode text` (default) is roughly 6x faster and about half the tokens.
-`--doc-mode image` treats the forms as pictures, which is a fairer test of a
-vision model but needs `pypdfium2`.
+---
 
-## The eight detectors
+## 🛠️ Cloud Deployment & Redeployment
 
-| | technique | fires when |
-|---|---|---|
-| D1 | Ghost / invented damage | a claimed part has no photograph of a damage class it could exhibit |
-| D2 | Severity inflation | declared severity is 2+ bands above observed **and** the estimate exceeds 4x market |
-| D3 | Pre-existing or staged damage | narrative implies high energy, evidence is cosmetic |
-| D4 | Invoice / parts inflation | quoted total exceeds 4x the market rate for the observed damage |
-| D5 | Exclusion / policy not in force | loss date outside the policy period, or cover does not respond |
-| D6 | Duplicate or repeat claim | prior claim on the same vehicle, same parts, predating this loss |
-| D7 | Wear-and-tear claimed as collision | low-speed parking/kerb narrative on cosmetic-only damage |
-| D8 | Loss-type mismatch | declared nature of loss admits none of the observed classes |
+### Rebuild and Deploy the Web UI:
+```powershell
+# Rebuild the UI container
+gcloud builds submit ./fraud_ui `
+    --tag "asia-southeast1-docker.pkg.dev/fraud-detection-511308/fraud-detection/ui:latest" `
+    --project fraud-detection-511308 --quiet
 
-## Ground truth
+# Deploy to Cloud Run
+gcloud run deploy fraud-ui `
+    --image="asia-southeast1-docker.pkg.dev/fraud-detection-511308/fraud-detection/ui:latest" `
+    --region="asia-southeast1" `
+    --project="fraud-detection-511308" --quiet
+```
 
-**Operator-only. Delete `ground_truth.json` and this section from anything you
-submit** — the whole dataset is anonymised so that no filename or document header
-reveals the answer, and shipping the answers undoes that. The script never sends
-it to the model; it is only read when you pass `--score`.
-
-5 clean, 8 fraud. One case per technique, deliberately mixed across easy, medium
-and hard.
-
-| folder | original | verdict | technique | difficulty | case |
-|---|---|---|---|---|---|
-| `CASE-155` | `CLN-002` | clean | — | hard | Kerbside scrape, minor cosmetic only |
-| `CASE-229` | `FRD-008` | fraud | D8 Loss-type mismatch (staged theft) | medium | Declared as theft, but the evidence shows impact damage |
-| `CASE-278` | `CLN-001` | clean | — | easy | Rear-end collision at a signalised junction |
-| `CASE-295` | `FRD-003` | fraud | D3 Pre-existing / staged damage | hard | Narrative describes a concrete-pillar impact; evidence is two surface scratches |
-| `CASE-381` | `FRD-001` | fraud | D1 Ghost / invented damage | medium | Three of four claimed panels have no supporting photograph |
-| `CASE-410` | `CLN-004` | clean | — | medium | Hail and wind damage to lamp and rear window |
-| `CASE-502` | `CLN-005` | clean | — | medium | Tyre burst causing rollover — five panels, all photographed |
-| `CASE-635` | `FRD-002` | fraud | D2 Severity inflation | easy | Two light scratches claimed as a write-off |
-| `CASE-787` | `FRD-007` | fraud | D7 Wear-and-tear claimed as collision | hard | Five hairline scuffs presented as a road traffic accident |
-| `CASE-822` | `FRD-006` | fraud | D6 Duplicate / repeat claim | medium | Same panels, same vehicle, resubmitted after an earlier settlement |
-| `CASE-861` | `FRD-005` | fraud | D5 Exclusion / policy not in force | easy | Genuine collision on a policy that expired 11 days earlier |
-| `CASE-872` | `CLN-003` | clean | — | hard | Car-park sideswipe with minor dent — wording resembles a wear claim |
-| `CASE-947` | `FRD-004` | fraud | D4 Invoice / parts inflation | medium | Genuine moderate dent with a quotation 8x the market rate |
-
-Declared facts per case, if you want to score by hand:
-
-| folder | claimed parts | nature of loss | declared severity | declared estimate |
-|---|---|---|---|---|
-| `CASE-155` | Left Side Mirror | Collision | Minor cosmetic | 260.00 |
-| `CASE-229` | Front Bumper, Front Left Headlamp | Theft | Moderate | 7,927.24 |
-| `CASE-278` | Rear Bumper, Boot Lid | Collision | Moderate | 6,317.64 |
-| `CASE-295` | Rear Left Wing, Rear Bumper | Collision | Moderate | 2,144.14 |
-| `CASE-381` | Windscreen, Front Bumper, Rear Bumper, Front Left Headlamp | Collision | Moderate | 10,707.12 |
-| `CASE-410` | Front Left Headlamp, Rear Window | Wind & Hail | Severe | 6,482.45 |
-| `CASE-502` | Roof Panel, Front Left Wing, Rear Left Wing, Left Side Mirror, Front Left Tyre | Collision | Severe | 19,096.80 |
-| `CASE-635` | Rear Left Door, Boot Lid | Collision | Vehicle not drivable | 14,800.00 |
-| `CASE-787` | Front Bumper, Rear Bumper, Front Left Wing, Front Right Wing | Collision | Minor cosmetic | 4,147.22 |
-| `CASE-822` | Front Bumper, Front Left Wing, Front Left Headlamp | Collision | Moderate | 8,360.08 |
-| `CASE-861` | Front Bumper, Front Left Wing | Collision | Moderate | 8,832.27 |
-| `CASE-872` | Front Right Wing | Collision | Minor cosmetic | 1,139.45 |
-| `CASE-947` | Front Left Wing | Collision | Moderate | 3,955.07 |
-
-Currency is SGD throughout.
-
-### Three traps worth knowing before you score
-
-- **The claim form's `DAMAGED PARTS` block is not a list of claims.** Every form
-  prints the same catalogue of every panel the form offers, one per line, and the
-  tick state does not survive PDF text extraction. The claimed parts are the
-  **itemised quotation line items**. Reading the form block as the claim makes you
-  report ghost damage on every clean case.
-- **`EXTENT OF DAMAGE` has the same problem** — `Minor cosmetic`, `Moderate`,
-  `Severe` and `Vehicle not drivable` are all printed. Cross-check the declared
-  severity against the estimated loss.
-- **Photographs are crops, not panels.** Support is decided by whether the visible
-  damage *class* is one the claimed part could exhibit. Guessing the panel from a
-  crop produces both false ghosts on real claims and misses on invented ones.
-
-## Measured results, and what is still wrong
-
-These are from `gemma-4-26B-A4B-it-UD-IQ3_XXS` (a 3.06 bpw quantisation) run
-fully offloaded on one RTX 4060 Ti (16 GB) via llama.cpp, temperature 0, all 13
-cases, ~15 minutes:
-
-| metric | result |
-|---|---|
-| fraud-call accuracy (fraud or not) | **10/13** |
-| exact verdict match | 10/13 |
-| ground-truth technique among those fired | 6/8 |
-| false positives (clean called fraud) | 3 — `CASE-278`, `CASE-410`, `CASE-502` |
-| false negatives (fraud called clean) | 0 |
-
-Treat this as a baseline for a small quantised model, not a ceiling. The known
-weaknesses, in the order I would attack them:
-
-1. **False positives on clean cases.** All three fire a detector that should stay
-   quiet: D4 on a genuinely market-priced repair, D8 on a clerical
-   declared-vs-narrative mismatch, D1 on a five-panel rollover where the photo
-   reading was degraded. Detector thresholds are tuned too loose.
-2. **Two techniques never fire.** D7 (wear-and-tear) and D5 (coverage gate). On
-   `CASE-861` the model correctly computed `in_force: false` in its coverage check
-   and then failed to mark D5 as fired — the reasoning was right and the encoding
-   was not. Both are pure text tasks that a stronger model should get right.
-3. **Stage-1 photo reading is the bottleneck.** Reasoning on a crop sometimes ran
-   to 8,000+ tokens without answering. There is an automatic retry ladder
-   (bigger budget, then reasoning off) and it recovers every case, but the
-   reasoning-off fallback produces visibly worse class readings, which then
-   poisons D1. A stronger model should need none of this.
-
-A model with reliable vision should mostly fix 1 and 3, and fix 2 outright.
-Re-run with `--score` and compare against the table above.
+### Rebuild the Analysis Runner:
+```powershell
+gcloud builds submit . `
+    --config cloudbuild.yaml `
+    --project fraud-detection-511308 --quiet
+```
