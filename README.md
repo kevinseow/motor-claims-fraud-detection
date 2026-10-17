@@ -237,3 +237,10 @@ gcloud builds submit . `
     --config cloudbuild.yaml `
     --project fraud-detection-511308 --quiet
 ```
+
+---
+
+## 👥 Authors & Contributors
+
+* **Kevin Seow** ([@kevinseow](https://github.com/kevinseow))
+* **Ben Tay** ([@bentay85](https://github.com/bentay85))
