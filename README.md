@@ -138,6 +138,21 @@ Claim Pack
 
 ---
 
+## 📈 Scaling Considerations: Free Tier Constraints to Enterprise Production
+
+To transition from this prototype/free-tier implementation to a national or enterprise-scale insurance deployment, several technical bottlenecks and their corresponding scaling pathways must be addressed:
+
+| Dimension | Current State (Free Tier / Prototype) | Enterprise Production Scale Path |
+|---|---|---|
+| **Model Quotas & Rate Limits** | • Strict 5–15 RPM and daily request caps.<br>• Mitigated via **12s request pacing** (`--rpm 5`) and 3-tier fallback chains (`gemini-3.8-flash` / `3.7-flash` / `3.6-flash`). | • Upgrade to **Google Cloud Vertex AI (pay-as-you-go)** or paid Gemini tier with **1,000–10,000+ RPM** quotas.<br>• Disable the 12-second pacing throttle (`--rpm 0`) for sub-second responses.<br>• Provision dedicated Vertex AI throughput for guaranteed latency during claims surges. |
+| **Ingestion Buffering & Queueing** | • Cloud Tasks buffers bursts at `max_dispatches_per_second: 10`, `max_concurrent_dispatches: 20` with exponential backoff retries. | • Increase Cloud Tasks dispatch rates in lockstep with model quota expansions.<br>• Implement **Cloud Pub/Sub** fan-out architecture to absorb hundreds of simultaneous claim pack submissions without loss. |
+| **Compute Concurrency** | • Cloud Run Job container instances run 1 claim pack per task. | • Scale Cloud Run Job concurrency up to hundreds of parallel tasks (`--tasks 100+`).<br>• For high-throughput automated bulk re-scoring, deploy worker pools on **Google Kubernetes Engine (GKE Autopilot)** with queue-depth autoscaling. |
+| **Multimodal Photo Cost & Caching** | • Exact SHA-256 byte-level deduplication reuses past damage observations and flags duplicate submissions across claims. | • Add **Perceptual Hashing (pHash / PDQ)** to detect duplicate photos that were cropped, rotated, recompressed, or filtered.<br>• Leverage **Gemini Batch API** for non-urgent claims to achieve a **50% cost discount**. |
+| **Storage & Data Archival** | • Automated GCS lifecycle rules transition inputs/outputs to Nearline (30d) and Coldline (90d). | • Add **Archive Storage** tier (>365 days at ~$0.0012/GB/mo, >95% savings) for multi-year insurance regulatory audit retention.<br>• Extract and index metadata/embeddings into Cloud BigQuery for rapid query access without touching cold objects. |
+| **Syndicated Fraud Ring Detection** | • Static JSON reference files (`reference/price_book.json`, `reference/prior_claims.json`). | • Connect to enterprise data lakes via **Google Cloud BigQuery** and **Vertex AI Vector Search** to identify cross-insurer fraud syndicates, repeat claimants, and staged accident rings across millions of historical claims. |
+
+---
+
 ## 🛡️ The Eight Fraud Detectors (D1–D8)
 
 | Code | Detector | What It Evaluates | Trigger Condition |
