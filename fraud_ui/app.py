@@ -19,7 +19,8 @@ Architecture:
      - Returns FRAUD_DETECTION_RESULTS.md from Cloud Storage once complete
 
 Environment variables:
-  UI_API_KEY          Bearer token clients & Cloud Tasks send in X-API-Key header
+  AUTH_ENABLED        Toggle access key auth: "true" or "false" (default: false for public access)
+  UI_API_KEY          Bearer token clients & Cloud Tasks send in X-API-Key header (when AUTH_ENABLED=true)
   GCS_BUCKET          Cloud Storage bucket name for inputs/outputs
   GCP_PROJECT         Google Cloud project ID
   GCP_REGION          Cloud Tasks & Cloud Run region (e.g. asia-southeast1)
@@ -48,10 +49,11 @@ app = Flask(__name__, static_folder="static")
 
 # ── config ────────────────────────────────────────────────────────────────────
 
-UI_API_KEY        = os.environ["UI_API_KEY"]
-GCS_BUCKET        = os.environ["GCS_BUCKET"]
-GCP_PROJECT       = os.environ["GCP_PROJECT"]
-GCP_REGION        = os.environ["GCP_REGION"]
+AUTH_ENABLED      = os.environ.get("AUTH_ENABLED", "false").lower() in ("true", "1", "yes")
+UI_API_KEY        = os.environ.get("UI_API_KEY", "")
+GCS_BUCKET        = os.environ.get("GCS_BUCKET", "fraud-detection-511308-fraud-data")
+GCP_PROJECT       = os.environ.get("GCP_PROJECT", "fraud-detection-511308")
+GCP_REGION        = os.environ.get("GCP_REGION", "asia-southeast1")
 JOB_NAME          = os.environ.get("FRAUD_RUN_JOB", "fraud-detection-job")
 CLOUD_TASKS_QUEUE = os.environ.get("CLOUD_TASKS_QUEUE", "fraud-claims-queue")
 SERVICE_URL       = os.environ.get("SERVICE_URL", "https://fraud-ui-1082243885044.asia-southeast1.run.app")
@@ -63,8 +65,10 @@ ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        if not AUTH_ENABLED:
+            return f(*args, **kwargs)
         key = request.headers.get("X-API-Key", "")
-        if key != UI_API_KEY:
+        if not UI_API_KEY or key != UI_API_KEY:
             logger.warning("Unauthorized request attempt")
             return jsonify({"error": "unauthorized"}), 401
         return f(*args, **kwargs)
@@ -145,6 +149,13 @@ def index():
     return send_from_directory("static", "index.html")
 
 
+@app.route("/api/config")
+def get_config():
+    return jsonify({
+        "auth_enabled": AUTH_ENABLED,
+    })
+
+
 @app.route("/api/upload", methods=["POST"])
 @require_api_key
 def upload():
@@ -209,14 +220,15 @@ def upload():
         worker_url = f"{base_url}/api/tasks/process-claim"
 
         payload = {"run_id": run_id, "case_id": case_id}
+        task_headers = {"Content-Type": "application/json"}
+        if AUTH_ENABLED and UI_API_KEY:
+            task_headers["X-API-Key"] = UI_API_KEY
+
         task = {
             "http_request": {
                 "http_method": tasks_v2.HttpMethod.POST,
                 "url": worker_url,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "X-API-Key": UI_API_KEY,
-                },
+                "headers": task_headers,
                 "body": json.dumps(payload).encode(),
             }
         }

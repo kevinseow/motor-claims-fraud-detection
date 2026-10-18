@@ -11,7 +11,7 @@ The application is deployed on Google Cloud Platform and accessible via a modern
 | Parameter | Details |
 |---|---|
 | **App URL** | [https://fraud-ui-1082243885044.asia-southeast1.run.app](https://fraud-ui-1082243885044.asia-southeast1.run.app) |
-| **Authentication** | Access Key configured securely via Google Secret Manager (`UI_API_KEY`) |
+| **Authentication** | Public solution mode active (`AUTH_ENABLED=false`). Optional Access Key protection toggleable via `AUTH_ENABLED=true`. |
 | **Hosting** | Google Cloud Run (Fully serverless, autoscaling, scales to zero when idle) |
 | **Region** | `asia-southeast1` (Singapore) |
 
@@ -21,13 +21,13 @@ The application is deployed on Google Cloud Platform and accessible via a modern
 
 ```
 ┌──────────────┐     ┌──────────────────────┐     ┌─────────────────────┐     ┌─────────────────┐     ┌────────────────────┐
-│ 1. Open App  │ ──► │ 2. Enter Access Key  │ ──► │ 3. Drag & Drop Pack │ ──► │ 4. Click Run   │ ──► │ 5. Review & Export │
-│ & Dashboard  │     │    & Case Reference  │     │    (PDFs & Photos)  │     │    "Analyse"    │     │    (Report / .md)  │
+│ 1. Open App  │ ──► │ 2. Set Case Reference│ ──► │ 3. Drag & Drop Pack │ ──► │ 4. Click Run   │ ──► │ 5. Review & Export │
+│ & Dashboard  │     │    (Optional)        │     │    (PDFs & Photos)  │     │    "Analyse"    │     │    (Report / .md)  │
 └──────────────┘     └──────────────────────┘     └─────────────────────┘     └─────────────────┘     └────────────────────┘
 ```
 
-### 1. Authenticate
-Open **[https://fraud-ui-1082243885044.asia-southeast1.run.app](https://fraud-ui-1082243885044.asia-southeast1.run.app)** and enter your assigned **Access Key** into the authentication field.
+### 1. Open Application
+Open **[https://fraud-ui-1082243885044.asia-southeast1.run.app](https://fraud-ui-1082243885044.asia-southeast1.run.app)**. In public mode, authentication is disabled and no access key is required. *(If authentication is turned on via `AUTH_ENABLED=true`, enter your assigned Access Key).*
 
 ### 2. Set Case Reference *(Optional)*
 Enter your internal claim identifier (e.g. `CASE-155` or `CLM-2026-9810`). If left blank, a unique reference ID (e.g. `CASE-A1B2C3`) is generated automatically.

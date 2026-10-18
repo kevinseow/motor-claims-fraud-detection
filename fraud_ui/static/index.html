@@ -510,20 +510,20 @@
 
       <div id="instructions-body" style="margin-top: 16px; font-size: 13px; line-height: 1.6; color: var(--muted2);">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px;">
-          <div style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
+          <div id="step-access-key" style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
             <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">1. Access Key</div>
             <div>Enter your authorized team access key to authenticate.</div>
           </div>
           <div style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
-            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">2. Case Reference</div>
+            <div id="step-title-case" style="font-weight: 600; color: var(--text); margin-bottom: 4px;">2. Case Reference</div>
             <div>Enter your claim ID (e.g. <code>CASE-155</code>) or leave blank to auto-generate.</div>
           </div>
           <div style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
-            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">3. Upload Files</div>
+            <div id="step-title-upload" style="font-weight: 600; color: var(--text); margin-bottom: 4px;">3. Upload Files</div>
             <div>Drag &amp; drop PDFs (forms, quotes) and JPG/PNG damage photos.</div>
           </div>
           <div style="background: var(--surface2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
-            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">4. View Verdict</div>
+            <div id="step-title-verdict" style="font-weight: 600; color: var(--text); margin-bottom: 4px;">4. View Verdict</div>
             <div>Click <b>Analyse Pack</b> to receive the fraud verdict &amp; full rationale.</div>
           </div>
         </div>
@@ -538,8 +538,10 @@
     <div class="card">
       <div class="card-title">Claim Pack Upload</div>
 
-      <label for="api-key">Access Key</label>
-      <input type="password" id="api-key" placeholder="Enter your access key" autocomplete="off" />
+      <div id="api-key-group">
+        <label for="api-key">Access Key</label>
+        <input type="password" id="api-key" placeholder="Enter your access key" autocomplete="off" />
+      </div>
 
       <label for="case-id">Case Reference <span style="color:var(--muted);font-weight:400">(optional — e.g. CASE-155, or leave blank to auto-generate)</span></label>
       <input type="text" id="case-id" placeholder="e.g. CASE-155" />
@@ -601,7 +603,59 @@
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     const $ = id => document.getElementById(id);
-    const apiKey = () => $('api-key').value.trim();
+    const apiKey = () => {
+      const el = $('api-key');
+      return el ? el.value.trim() : '';
+    };
+
+    let authRequired = false;
+
+    function updateStepNumbering(hasAuth) {
+      const keyGroup = $('api-key-group');
+      const stepKey = $('step-access-key');
+      const stepCase = $('step-title-case');
+      const stepUpload = $('step-title-upload');
+      const stepVerdict = $('step-title-verdict');
+
+      if (!hasAuth) {
+        if (keyGroup) keyGroup.style.display = 'none';
+        if (stepKey) stepKey.style.display = 'none';
+        if (stepCase) stepCase.textContent = '1. Case Reference';
+        if (stepUpload) stepUpload.textContent = '2. Upload Files';
+        if (stepVerdict) stepVerdict.textContent = '3. View Verdict';
+      } else {
+        if (keyGroup) keyGroup.style.display = 'block';
+        if (stepKey) stepKey.style.display = 'block';
+        if (stepCase) stepCase.textContent = '2. Case Reference';
+        if (stepUpload) stepUpload.textContent = '3. Upload Files';
+        if (stepVerdict) stepVerdict.textContent = '4. View Verdict';
+      }
+    }
+
+    // Fetch server configuration to check if authentication is enabled
+    async function loadConfig() {
+      try {
+        const resp = await fetch('/api/config');
+        if (resp.ok) {
+          const cfg = await resp.json();
+          authRequired = !!cfg.auth_enabled;
+          updateStepNumbering(authRequired);
+        }
+      } catch (e) {
+        console.warn('Could not load /api/config, default public mode active', e);
+        updateStepNumbering(false);
+      }
+    }
+    loadConfig();
+
+    function authHeaders() {
+      const headers = {};
+      const key = apiKey();
+      if (key) {
+        headers['X-API-Key'] = key;
+      }
+      return headers;
+    }
 
     function clearAllFiles() {
       selectedFiles = [];
@@ -768,7 +822,7 @@
 
     // ── Submit ────────────────────────────────────────────────────────────────
     $('submit-btn').addEventListener('click', async () => {
-      if (!apiKey()) { toast('Enter your access key first.', 'error'); return; }
+      if (authRequired && !apiKey()) { toast('Enter your access key first.', 'error'); return; }
       if (!selectedFiles.length) { toast('No files selected.', 'error'); return; }
 
       // Lock UI
@@ -787,7 +841,7 @@
       try {
         const resp = await fetch('/api/upload', {
           method: 'POST',
-          headers: { 'X-API-Key': apiKey() },
+          headers: authHeaders(),
           body: form,
         });
         data = await resp.json();
@@ -829,7 +883,7 @@
         try {
           const resp = await fetch(
             `/api/status?run_id=${encodeURIComponent(currentRun.run_id)}&execution_name=${encodeURIComponent(currentRun.execution_name || '')}`,
-            { headers: { 'X-API-Key': apiKey() } }
+            { headers: authHeaders() }
           );
           data = await resp.json();
           if (data.execution_name) currentRun.execution_name = data.execution_name;
@@ -872,7 +926,7 @@
     async function fetchResults() {
       try {
         const resp = await fetch(`/api/results?run_id=${encodeURIComponent(currentRun.run_id)}`,
-          { headers: { 'X-API-Key': apiKey() } });
+          { headers: authHeaders() });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error);
         reportMarkdown = data.report;
